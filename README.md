@@ -128,12 +128,12 @@ Natural language output explaining:
 - Scalable distributed graph storage
 
 ---
-
+<!--
 ## 📌 Note
 
 This project was developed as a collaborative effort.  
 This repository reflects my contributions to the system design, backend logic, and dashboard implementation.
-<!--This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
