@@ -54,16 +54,6 @@ as interconnected graph entities instead of flat tables.
 - Explainable audit output in natural language
 - Predictive compliance risk modeling
 
----
-
-## 👩‍💻 My Contribution
-
-- Designed Knowledge Graph schema for GST entities
-- Implemented reconciliation traversal logic
-- Built REST APIs for data ingestion and validation
-- Developed React-based ITC risk dashboard
-- Implemented vendor compliance scoring logic
-- Contributed to audit trail explanation module
 
 ---
 
