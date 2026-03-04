@@ -39,7 +39,7 @@ const NODE_CONFIG: Record<string, { color: string; icon: string }> = {
     irn: { color: "#8B5CF6", icon: "🔗" },
 };
 
-function buildGraphNodes(invoices: ReturnType<typeof import("@/lib/demoData").generateDemoInvoices>) {
+function buildGraphNodes(invoices: ReturnType<typeof import("@/lib/demoData").generateDemoInvoices>, vendors: import("@/lib/types").VendorRisk[]) {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     const nodeSet = new Set<string>();
@@ -64,11 +64,25 @@ function buildGraphNodes(invoices: ReturnType<typeof import("@/lib/demoData").ge
             const vPos = { x: 450 + Math.cos(angle) * 300, y: 220 + Math.sin(angle) * 200 };
             vendorsSeen.set(inv.gstin, vPos);
             const vid = `vendor_${inv.gstin}`;
+            // Get flag/report state from the store vendors array
+            const vendorState = vendors.find(v => v.gstin === inv.gstin);
+            const isFlagged = vendorState?.flagged;
+            const isReported = vendorState?.reported;
+            const vendorColor = isFlagged ? "#EF4444" : "#F97316";
+
             nodes.push({
                 id: vid,
                 type: "custom",
                 position: vPos,
-                data: { label: inv.vendorName.split(" ").slice(0, 2).join(" "), type: "Vendor", detail: inv.gstin, color: "#F97316", icon: "👤" },
+                data: {
+                    label: inv.vendorName.split(" ").slice(0, 2).join(" "),
+                    type: isFlagged ? "Flagged Vendor" : "Vendor",
+                    detail: inv.gstin,
+                    color: vendorColor,
+                    icon: isFlagged ? "⚠️" : "👤",
+                    flagged: isFlagged,
+                    flagReason: vendorState?.flagReason
+                },
             });
             edges.push({
                 id: `e_tv_${vIdx}`,
@@ -79,6 +93,30 @@ function buildGraphNodes(invoices: ReturnType<typeof import("@/lib/demoData").ge
                 labelStyle: { fill: "#94A3B8", fontSize: 10 },
                 animated: true,
             });
+
+            // If reported, create an Admin Node linked to this vendor
+            if (isReported) {
+                const adminId = "admin_main";
+                if (!nodeSet.has(adminId)) {
+                    nodes.push({
+                        id: adminId,
+                        type: "custom",
+                        position: { x: 450, y: -100 },
+                        data: { label: "System Admin", type: "Admin", detail: "Internal Compliance", color: "#3B82F6", icon: "🛡️" },
+                    });
+                    nodeSet.add(adminId);
+                }
+                edges.push({
+                    id: `e_admin_report_${vid}`,
+                    source: adminId,
+                    target: vid,
+                    label: "Reported",
+                    style: { stroke: "#3B82F6", strokeOpacity: 0.8, strokeDasharray: "5,5" },
+                    labelStyle: { fill: "#3B82F6", fontSize: 10, fontWeight: "bold" },
+                    animated: true,
+                });
+            }
+
             vIdx++;
         }
 
@@ -116,7 +154,7 @@ const LAYER_OPTIONS = [
 ];
 
 export default function GraphPage() {
-    const { invoices, graphBuilt, loadDemoData, setActiveNav } = useStore();
+    const { invoices, graphBuilt, loadDemoData, setActiveNav, vendors } = useStore();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -127,10 +165,10 @@ export default function GraphPage() {
 
     useEffect(() => {
         if (!graphBuilt || invoices.length === 0) return;
-        const { nodes: n, edges: e } = buildGraphNodes(invoices);
+        const { nodes: n, edges: e } = buildGraphNodes(invoices, vendors);
         setNodes(n);
         setEdges(e);
-    }, [graphBuilt, invoices]);
+    }, [graphBuilt, invoices, vendors]);
 
     const handleNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
         setSelectedNode(node);
@@ -254,6 +292,12 @@ export default function GraphPage() {
                             <div className="glass-card" style={{ padding: 12 }}>
                                 <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8, fontWeight: 600 }}>DETAILS</div>
                                 <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>{selectedNode.data.detail}</div>
+                                {selectedNode.data.flagged && (
+                                    <div style={{ marginTop: 8, padding: 8, background: "rgba(239,68,68,0.1)", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)" }}>
+                                        <div style={{ fontSize: 10, color: "#EF4444", fontWeight: 700, marginBottom: 2 }}>FLAG REASON</div>
+                                        <div style={{ fontSize: 12, color: "var(--text-primary)" }}>{selectedNode.data.flagReason || "No reason provided."}</div>
+                                    </div>
+                                )}
                             </div>
                             <div style={{ marginTop: 12 }}>
                                 <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginBottom: 8 }}>CONNECTED EDGES</div>

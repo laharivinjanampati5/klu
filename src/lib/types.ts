@@ -41,6 +41,13 @@ export interface VendorRisk {
     predictedRisk: RiskLevel;
     invoiceCount: number;
     complianceScore: number;
+    flagged?: boolean;
+    flagReason?: string;
+    flaggedAt?: string;
+    reported?: boolean;
+    reportedSubject?: string;
+    reportedMessage?: string;
+    reportedAt?: string;
 }
 
 export interface UploadedFile {

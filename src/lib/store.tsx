@@ -30,6 +30,8 @@ interface AppStore {
     graphBuilt: boolean;
     activeNav: string;
     setActiveNav: (v: string) => void;
+    flagVendor: (gstin: string, reason?: string) => void;
+    reportVendor: (gstin: string, subject: string, message: string) => void;
 }
 
 const defaultStats: ReconciliationStats = {
@@ -58,6 +60,18 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     const [reconciliationDone, setReconciliationDone] = useState(false);
     const [graphBuilt, setGraphBuilt] = useState(false);
     const [activeNav, setActiveNav] = useState("dashboard");
+
+    const flagVendor = useCallback((gstin: string, reason?: string) => {
+        setVendors((prev) => prev.map(v =>
+            v.gstin === gstin ? { ...v, flagged: true, flagReason: reason, flaggedAt: new Date().toISOString() } : v
+        ));
+    }, []);
+
+    const reportVendor = useCallback((gstin: string, subject: string, message: string) => {
+        setVendors((prev) => prev.map(v =>
+            v.gstin === gstin ? { ...v, reported: true, reportedSubject: subject, reportedMessage: message, reportedAt: new Date().toISOString() } : v
+        ));
+    }, []);
 
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", theme);
@@ -132,6 +146,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
                 isProcessing, isReconciling, reconciliationDone,
                 processFiles, runReconciliation, loadDemoData,
                 graphBuilt, activeNav, setActiveNav,
+                flagVendor, reportVendor,
             }}
         >
             {children}

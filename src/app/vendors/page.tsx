@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus, ExternalLink, Shield } from "lucide-react";
-import { motion } from "framer-motion";
+import { TrendingUp, TrendingDown, Minus, ExternalLink, Shield, AlertTriangle, MessageSquare, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 function RiskBar({ score }: { score: number }) {
@@ -25,10 +25,15 @@ function TrendIcon({ trend }: { trend: "up" | "down" | "stable" }) {
 }
 
 export default function VendorsPage() {
-    const { vendors, loadDemoData, graphBuilt, setActiveNav } = useStore();
+    const { vendors, loadDemoData, graphBuilt, setActiveNav, flagVendor, reportVendor } = useStore();
     const [search, setSearch] = useState("");
     const [filterRisk, setFilterRisk] = useState("All");
     const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+    const [flagModalOpen, setFlagModalOpen] = useState(false);
+    const [flagReason, setFlagReason] = useState("");
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [reportSubject, setReportSubject] = useState("");
+    const [reportMessage, setReportMessage] = useState("");
 
     useEffect(() => { setActiveNav("vendors"); }, [setActiveNav]);
 
@@ -160,9 +165,34 @@ export default function VendorsPage() {
                             onClick={e => e.stopPropagation()}
                             style={{
                                 background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20,
-                                padding: 32, width: 500, maxWidth: "90vw",
+                                padding: 32, width: 500, maxWidth: "90vw", position: "relative"
                             }}>
-                            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4, color: "var(--text-primary)" }}>{v.name}</div>
+
+                            {/* Action Icons */}
+                            <div style={{ position: "absolute", top: 24, right: 24, display: "flex", gap: 8 }}>
+                                <button
+                                    className="btn-secondary"
+                                    style={{ padding: 8, color: v.flagged ? "#EF4444" : "var(--text-secondary)" }}
+                                    onClick={() => setFlagModalOpen(true)}
+                                    title="Mark as Flagged"
+                                    disabled={v.flagged}
+                                >
+                                    <AlertTriangle size={18} />
+                                </button>
+                                <button
+                                    className="btn-secondary"
+                                    style={{ padding: 8, color: "var(--text-secondary)" }}
+                                    onClick={() => setReportModalOpen(true)}
+                                    title="Report / Message Vendor"
+                                >
+                                    <MessageSquare size={18} />
+                                </button>
+                            </div>
+
+                            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4, color: "var(--text-primary)" }}>
+                                {v.flagged ? <span style={{ color: "#EF4444", marginRight: 8 }}>⚠️</span> : null}
+                                {v.name}
+                            </div>
                             <div style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-muted)", marginBottom: 20 }}>{v.gstin}</div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
                                 {[
@@ -189,6 +219,99 @@ export default function VendorsPage() {
                     </div>
                 );
             })()}
+
+            {/* Flag Modal */}
+            <AnimatePresence>
+                {flagModalOpen && selectedVendor && (
+                    <div style={{
+                        position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 200,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, width: 400 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                <div style={{ fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, color: "#EF4444" }}>
+                                    <AlertTriangle size={18} /> Flag Vendor
+                                </div>
+                                <button onClick={() => setFlagModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>
+                                Provide a reason for flagging this vendor. This will turn the vendor node red in the Knowledge Graph.
+                            </p>
+                            <textarea
+                                className="input-field"
+                                style={{ width: "100%", minHeight: 80, marginBottom: 16, resize: "vertical" }}
+                                placeholder="Reason for flagging (optional)..."
+                                value={flagReason}
+                                onChange={e => setFlagReason(e.target.value)}
+                            />
+                            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                                <button className="btn-secondary" onClick={() => setFlagModalOpen(false)}>Cancel</button>
+                                <button className="btn-primary" style={{ background: "#EF4444", color: "white" }} onClick={() => {
+                                    flagVendor(selectedVendor, flagReason);
+                                    setFlagModalOpen(false);
+                                    setFlagReason("");
+                                    toast.success("Vendor marked as flagged successfully");
+                                }}>Flag Vendor</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Report Modal */}
+            <AnimatePresence>
+                {reportModalOpen && selectedVendor && (
+                    <div style={{
+                        position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 200,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, width: 450 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                <div style={{ fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                                    <MessageSquare size={18} color="#3B82F6" /> Message Vendor
+                                </div>
+                                <button onClick={() => setReportModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <div style={{ marginBottom: 12 }}>
+                                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 4, display: "block" }}>Subject</label>
+                                <input
+                                    className="input-field"
+                                    style={{ width: "100%" }}
+                                    placeholder="Discrepancy in Invoice Mismatch"
+                                    value={reportSubject}
+                                    onChange={e => setReportSubject(e.target.value)}
+                                />
+                            </div>
+                            <div style={{ marginBottom: 16 }}>
+                                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 4, display: "block" }}>Message</label>
+                                <textarea
+                                    className="input-field"
+                                    style={{ width: "100%", minHeight: 120, resize: "vertical" }}
+                                    placeholder="Provide details about the mismatch to the vendor..."
+                                    value={reportMessage}
+                                    onChange={e => setReportMessage(e.target.value)}
+                                />
+                            </div>
+                            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                                <button className="btn-secondary" onClick={() => setReportModalOpen(false)}>Cancel</button>
+                                <button className="btn-primary" onClick={() => {
+                                    reportVendor(selectedVendor, reportSubject || "Urgent: Invoice Discrepancy", reportMessage);
+                                    setReportModalOpen(false);
+                                    setReportSubject("");
+                                    setReportMessage("");
+                                    toast.success("Message sent and logged! Admin node linked in Graph.");
+                                }}>Send Message</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
