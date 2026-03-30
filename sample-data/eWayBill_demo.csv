@@ -1,0 +1,9 @@
+﻿invoice_no,gstin,vendor_name,document_type,source,invoice_date,taxable_amount,cgst,sgst,igst,total_amount,status,root_cause,risk_level,risk_score,irn,e_way_bill,gstr1_period,gstr2b_period,gstr3b_period
+INV-2024-00001,29ABCDE1234F1Z5,Reliance Industries Ltd,Invoice,GSTR1,2024-04-05,120000,10800,10800,0,141600,Matched,,Low,18,IRN00001,EWB00001,2024-04,2024-04,2024-04
+INV-2024-00002,27FGHIJ5678K2Z6,Tata Consultancy Services,Invoice,GSTR2B,2024-04-08,98000,8820,8820,0,115640,Mismatch,Invoice missing in GSTR-2B - Possible suppression by supplier,High,87,IRN00002,EWB00002,2024-04,2024-04,2024-04
+INV-2024-00003,33KLMNO9012L3Z7,Infosys Limited,Invoice,PurchaseRegister,2024-04-11,156000,14040,14040,0,184080,Mismatch,Invoice date discrepancy - Filed in wrong tax period,Medium,63,IRN00003,EWB00003,2024-04,2024-05,2024-04
+INV-2024-00004,19PQRST3456M4Z8,Wipro Technologies,Invoice,eInvoice,2024-04-13,73000,6570,6570,0,86140,Matched,,Low,22,IRN00004,EWB00004,2024-04,2024-04,2024-04
+INV-2024-00005,07UVWXY7890N5Z9,HCL Technologies,Invoice,GSTR1,2024-04-18,210000,18900,18900,0,247800,Mismatch,Duplicate invoice detected - Same invoice filed twice,High,91,IRN00005,EWB00005,2024-04,2024-04,2024-04
+INV-2024-00006,24ABCFG2345P6Z0,Mahindra Electric,Invoice,GSTR2B,2024-04-22,64000,5760,5760,0,75520,Matched,,Low,20,IRN00006,EWB00006,2024-04,2024-04,2024-04
+INV-2024-00007,09HIJKL6789Q7Z1,Bajaj Auto Limited,Invoice,PurchaseRegister,2024-05-02,188000,16920,16920,0,221840,Mismatch,Amount mismatch - Partial credit note not adjusted,Medium,58,IRN00007,EWB00007,2024-05,2024-05,2024-05
+INV-2024-00008,32MNOPQ0123R8Z2,Hero MotoCorp Ltd,Invoice,eInvoice,2024-05-05,82000,7380,7380,0,96760,Matched,,Low,24,IRN00008,EWB00008,2024-05,2024-05,2024-05
