@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
+import InstallAppButton from "@/components/InstallAppButton";
 import { getMismatchTrend, getRiskDistribution } from "@/lib/demoData";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { buildGraphMetrics } from "@/lib/insights";
@@ -19,7 +20,7 @@ const METRIC_CARDS = [
 ];
 
 export default function DashboardPage() {
-  const { stats, mismatches, invoices, vendors, loadDemoData, graphBuilt, setActiveNav } = useStore();
+  const { stats, mismatches, invoices, vendors, loadDemoData, setActiveNav } = useStore();
 
   useEffect(() => {
     setActiveNav("dashboard");
@@ -53,6 +54,7 @@ export default function DashboardPage() {
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Link href="/upload" onClick={() => setActiveNav("upload")}><button className="btn-primary" style={{ fontSize: 14, padding: "12px 22px" }}><Upload size={16} />Upload GST Data</button></Link>
             <button className="btn-secondary" onClick={handleLoadDemo}><Activity size={16} />Load Demo Data (100 invoices)</button>
+            <InstallAppButton />
           </div>
         </div>
       </motion.div>

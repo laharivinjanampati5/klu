@@ -4,7 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import { buildFraudSignals, buildTrustSignals } from "@/lib/insights";
-import { Activity, ShieldAlert, Waves } from "lucide-react";
+import { Activity, BellRing, ShieldAlert, Waves } from "lucide-react";
+
+function formatNotificationTime(value: string) {
+  return new Date(value).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function VendorsPage() {
   const { vendors, mismatches, graphBuilt, loadDemoData, setActiveNav } = useStore();
@@ -18,6 +27,7 @@ export default function VendorsPage() {
   const fraudSignals = useMemo(() => buildFraudSignals(mismatches, vendors), [mismatches, vendors]);
   const selected = vendors.find((vendor) => vendor.gstin === selectedGstin) ?? vendors[0];
   const selectedTrust = trustSignals.find((item) => item.id === selected?.gstin);
+  const notifications = selected?.notifications ?? [];
 
   return (
     <div className="page-enter">
@@ -52,7 +62,32 @@ export default function VendorsPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div className="glass-card" style={{ padding: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}><div><div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>Selected Vendor</div><div style={{ fontSize: 12, color: "var(--text-muted)" }}>Trust and contagion profile</div></div><ShieldAlert size={18} color="#F97316" /></div>
-              {selected && (<><div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>{selected.name}</div><div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14, fontFamily: "monospace" }}>{selected.gstin}</div><div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 14 }}><div style={{ borderRadius: 12, padding: 14, background: "var(--bg-secondary)", border: "1px solid var(--border)" }}><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Trust Score</div><div style={{ fontSize: 22, fontWeight: 800, color: selectedTrust?.color ?? "#10B981" }}>{selectedTrust?.trustScore ?? 0}</div></div><div style={{ borderRadius: 12, padding: 14, background: "var(--bg-secondary)", border: "1px solid var(--border)" }}><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Compliance</div><div style={{ fontSize: 22, fontWeight: 800, color: "#10B981" }}>{selected.complianceScore}%</div></div></div><div style={{ borderRadius: 12, padding: 14, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}><div style={{ fontSize: 12, color: "#F59E0B", fontWeight: 700, marginBottom: 6 }}>Contagion Note</div><div style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.6 }}>{selectedTrust?.summary ?? "No contagion summary available."}</div></div></>)}
+              {selected && (<><div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>{selected.name}</div><div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10, fontFamily: "monospace" }}>{selected.gstin}</div><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>{selected.flagged ? <span className="badge-high">Flagged</span> : null}{selected.reported ? <span className="badge-medium">Reported</span> : null}{notifications.length > 0 ? <span className="badge-pending">{notifications.length} Notifications</span> : null}</div><div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 14 }}><div style={{ borderRadius: 12, padding: 14, background: "var(--bg-secondary)", border: "1px solid var(--border)" }}><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Trust Score</div><div style={{ fontSize: 22, fontWeight: 800, color: selectedTrust?.color ?? "#10B981" }}>{selectedTrust?.trustScore ?? 0}</div></div><div style={{ borderRadius: 12, padding: 14, background: "var(--bg-secondary)", border: "1px solid var(--border)" }}><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Compliance</div><div style={{ fontSize: 22, fontWeight: 800, color: "#10B981" }}>{selected.complianceScore}%</div></div></div><div style={{ borderRadius: 12, padding: 14, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}><div style={{ fontSize: 12, color: "#F59E0B", fontWeight: 700, marginBottom: 6 }}>Contagion Note</div><div style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.6 }}>{selectedTrust?.summary ?? "No contagion summary available."}</div></div></>)}
+            </div>
+
+            <div className="glass-card" style={{ padding: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}><div><div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>Vendor Notification Center</div><div style={{ fontSize: 12, color: "var(--text-muted)" }}>Complaint and flag messages delivered only to the selected vendor</div></div><BellRing size={18} color="#3B82F6" /></div>
+              {notifications.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {notifications.map((notification) => (
+                    <div key={notification.id} style={{ borderRadius: 12, padding: 14, background: "var(--bg-secondary)", border: "1px solid var(--border)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{notification.title}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: notification.type === "Flag" ? "#EF4444" : "#3B82F6" }}>{notification.type}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>{notification.message}</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
+                        <span>{notification.invoiceNo} - {notification.origin}</span>
+                        <span>{formatNotificationTime(notification.createdAt)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ borderRadius: 12, padding: 14, background: "var(--bg-secondary)", border: "1px solid var(--border)", fontSize: 13, color: "var(--text-secondary)" }}>
+                  No notifications have been delivered to this vendor yet.
+                </div>
+              )}
             </div>
 
             <div className="glass-card" style={{ padding: 20 }}>

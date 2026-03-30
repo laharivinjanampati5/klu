@@ -31,6 +31,17 @@ export interface MismatchRecord {
     details: string;
 }
 
+export interface VendorNotification {
+    id: string;
+    type: "Flag" | "Report";
+    invoiceNo: string;
+    title: string;
+    message: string;
+    origin: "Reconciliation" | "Audit Trail";
+    status: "Sent";
+    createdAt: string;
+}
+
 export interface VendorRisk {
     gstin: string;
     name: string;
@@ -48,6 +59,7 @@ export interface VendorRisk {
     reportedSubject?: string;
     reportedMessage?: string;
     reportedAt?: string;
+    notifications?: VendorNotification[];
 }
 
 export interface UploadedFile {

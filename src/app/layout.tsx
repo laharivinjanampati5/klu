@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "GST GraphRecon AI – India's Most Intelligent GST Reconciliation Platform",
   description: "Stop ITC Leakage. Reconcile in Minutes with Knowledge Graphs. AI-powered GST reconciliation using advanced graph analytics.",
   keywords: "GST reconciliation, ITC, GSTR-2B, knowledge graph, AI, India",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

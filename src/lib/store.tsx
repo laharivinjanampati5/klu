@@ -1,12 +1,29 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { GSTInvoice, MismatchRecord, VendorRisk, UploadedFile, ReconciliationStats } from "./types";
+import { GSTInvoice, MismatchRecord, VendorNotification, VendorRisk, UploadedFile, ReconciliationStats } from "./types";
 import {
     generateDemoInvoices,
     generateMismatches,
     generateVendorRisks,
     computeStats,
 } from "./demoData";
+
+interface VendorFlagPayload {
+    gstin: string;
+    invoiceNo: string;
+    reason: string;
+    origin: "Reconciliation" | "Audit Trail";
+}
+
+interface VendorReportPayload {
+    gstin: string;
+    invoiceNo: string;
+    subject: string;
+    message: string;
+    origin: "Reconciliation" | "Audit Trail";
+}
+
+type VendorActionStatus = "sent" | "duplicate" | "missing";
 
 interface AppStore {
     theme: "dark" | "light";
@@ -30,22 +47,19 @@ interface AppStore {
     graphBuilt: boolean;
     activeNav: string;
     setActiveNav: (v: string) => void;
-    flagVendor: (gstin: string, reason?: string) => void;
-    reportVendor: (gstin: string, subject: string, message: string) => void;
+    flagVendor: (payload: VendorFlagPayload) => VendorActionStatus;
+    reportVendor: (payload: VendorReportPayload) => VendorActionStatus;
 }
 
-const defaultStats: ReconciliationStats = {
-    totalInvoices: 0,
-    matched: 0,
-    mismatches: 0,
-    missing: 0,
-    totalITCClaimed: 0,
-    leakageRisk: 0,
-    complianceScore: 0,
-    highRiskVendors: 0,
-};
-
 const StoreCtx = createContext<AppStore | null>(null);
+
+function notificationExists(
+    notifications: VendorNotification[] | undefined,
+    type: VendorNotification["type"],
+    invoiceNo: string,
+) {
+    return notifications?.some((item) => item.type === type && item.invoiceNo === invoiceNo) ?? false;
+}
 
 export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -61,16 +75,75 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     const [graphBuilt, setGraphBuilt] = useState(false);
     const [activeNav, setActiveNav] = useState("dashboard");
 
-    const flagVendor = useCallback((gstin: string, reason?: string) => {
-        setVendors((prev) => prev.map(v =>
-            v.gstin === gstin ? { ...v, flagged: true, flagReason: reason, flaggedAt: new Date().toISOString() } : v
-        ));
+    const flagVendor = useCallback((payload: VendorFlagPayload) => {
+        const createdAt = new Date().toISOString();
+        let status: VendorActionStatus = "missing";
+
+        setVendors((prev) => prev.map((vendor) => {
+            if (vendor.gstin !== payload.gstin) return vendor;
+            if (notificationExists(vendor.notifications, "Flag", payload.invoiceNo)) {
+                status = "duplicate";
+                return vendor;
+            }
+
+            status = "sent";
+            const notification: VendorNotification = {
+                id: `flag_${payload.gstin}_${payload.invoiceNo}`,
+                type: "Flag",
+                invoiceNo: payload.invoiceNo,
+                title: `Flag raised for ${payload.invoiceNo}`,
+                message: `Complaint registered successfully for invoice ${payload.invoiceNo}. ${payload.reason}`,
+                origin: payload.origin,
+                status: "Sent",
+                createdAt,
+            };
+
+            return {
+                ...vendor,
+                flagged: true,
+                flagReason: payload.reason,
+                flaggedAt: createdAt,
+                notifications: [notification, ...(vendor.notifications ?? [])],
+            };
+        }));
+
+        return status;
     }, []);
 
-    const reportVendor = useCallback((gstin: string, subject: string, message: string) => {
-        setVendors((prev) => prev.map(v =>
-            v.gstin === gstin ? { ...v, reported: true, reportedSubject: subject, reportedMessage: message, reportedAt: new Date().toISOString() } : v
-        ));
+    const reportVendor = useCallback((payload: VendorReportPayload) => {
+        const createdAt = new Date().toISOString();
+        let status: VendorActionStatus = "missing";
+
+        setVendors((prev) => prev.map((vendor) => {
+            if (vendor.gstin !== payload.gstin) return vendor;
+            if (notificationExists(vendor.notifications, "Report", payload.invoiceNo)) {
+                status = "duplicate";
+                return vendor;
+            }
+
+            status = "sent";
+            const notification: VendorNotification = {
+                id: `report_${payload.gstin}_${payload.invoiceNo}`,
+                type: "Report",
+                invoiceNo: payload.invoiceNo,
+                title: payload.subject,
+                message: payload.message,
+                origin: payload.origin,
+                status: "Sent",
+                createdAt,
+            };
+
+            return {
+                ...vendor,
+                reported: true,
+                reportedSubject: payload.subject,
+                reportedMessage: payload.message,
+                reportedAt: createdAt,
+                notifications: [notification, ...(vendor.notifications ?? [])],
+            };
+        }));
+
+        return status;
     }, []);
 
     useEffect(() => {
